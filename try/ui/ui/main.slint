@@ -1,0 +1,198 @@
+import { Button, LineEdit, ListView, Palette, Switch, TabWidget } from "std-widgets.slint";
+
+export struct DeviceRow {
+    address:   string,
+    alias:     string,
+    icon:      string,
+    paired:    bool,
+    trusted:   bool,
+    connected: bool,
+    // Signal strength in dBm while in range of a discovery; empty otherwise.
+    rssi:      string,
+    // Battery in percent where the device reports one; empty otherwise.
+    battery:   string,
+}
+
+component Info inherits Text {
+    color: Palette.foreground.transparentize(0.45);
+    font-size: 12px;
+    vertical-alignment: center;
+}
+
+export component MainWindow inherits Window {
+    title: "Bluetooth";
+    preferred-width: 820px;
+    preferred-height: 560px;
+
+    in property <string> attached_to;
+    in-out property <string> message: "Starting...";
+    in property <bool> busy;
+
+    in property <string> adapter;
+    in property <bool> powered;
+    in property <bool> discovering;
+    in property <[DeviceRow]> devices;
+    in property <[string]> events;
+
+    // The pairing request in flight: its identity, empty when none; what is asked; the passkey to show.
+    in property <string> pairing_id;
+    in property <string> pairing_kind;
+    in property <string> pairing_device;
+    in property <string> pairing_passkey;
+    in property <bool> pairing_answers;
+
+    // Whether this panel keeps discovery running.
+    in-out property <bool> scanning;
+
+    callback set_power(bool);
+    callback set_scan(bool);
+    callback pair(string);
+    callback connect_device(string);
+    callback disconnect_device(string);
+    callback trust(string, bool);
+    callback forget(string);
+    callback answer(string /*request*/, bool /*accept*/, string /*code*/);
+    callback clear_events();
+
+    property <string> code;
+    property <string> confirm_forget;
+
+    VerticalLayout {
+        padding: 10px;
+        spacing: 8px;
+
+        HorizontalLayout {
+            spacing: 10px;
+            Text { text: root.message; font-weight: 700; vertical-alignment: center; wrap: word-wrap; horizontal-stretch: 1; }
+            if root.busy : Text { text: "working..."; vertical-alignment: center; color: Palette.accent-background; }
+            Info { text: root.attached_to; }
+        }
+
+        HorizontalLayout {
+            spacing: 14px;
+            Text { text: root.adapter == "" ? "No adapter" : root.adapter; vertical-alignment: center; font-weight: 600; }
+            Switch {
+                text: "Powered";
+                checked: root.powered;
+                enabled: root.adapter != "";
+                toggled => { root.set_power(self.checked); }
+            }
+            Switch {
+                text: root.discovering ? "Discovering" : "Discover";
+                checked <=> root.scanning;
+                enabled: root.powered;
+                toggled => { root.set_scan(self.checked); }
+            }
+            Rectangle { horizontal-stretch: 1; }
+        }
+
+        // The pairing request in flight: what the device asks, and the answer.
+        if root.pairing_id != "" : Rectangle {
+            background: Palette.accent-background.transparentize(0.85);
+            border-radius: 6px;
+            VerticalLayout {
+                padding: 10px;
+                spacing: 8px;
+                Text {
+                    font-weight: 700;
+                    wrap: word-wrap;
+                    text: root.pairing_kind == "pin" ? root.pairing_device + " asks for a PIN code"
+                        : root.pairing_kind == "passkey" ? root.pairing_device + " asks for the passkey it shows"
+                        : root.pairing_kind == "confirm" ? "Does " + root.pairing_device + " show " + root.pairing_passkey + "?"
+                        : root.pairing_kind == "authorize" ? root.pairing_device + " asks to pair"
+                        : root.pairing_kind == "service" ? root.pairing_device + " asks to use a service"
+                        : "Type " + root.pairing_passkey + " on " + root.pairing_device;
+                }
+                if root.pairing_kind == "pin" || root.pairing_kind == "passkey" : LineEdit {
+                    text <=> root.code;
+                    placeholder-text: root.pairing_kind == "pin" ? "PIN" : "six digits";
+                    input-type: root.pairing_kind == "pin" ? InputType.password : InputType.number;
+                }
+                if root.pairing_answers : HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+                    Button {
+                        text: "Accept";
+                        primary: true;
+                        clicked => { root.answer(root.pairing_id, true, root.code); root.code = ""; }
+                    }
+                    Button {
+                        text: "Reject";
+                        clicked => { root.answer(root.pairing_id, false, ""); root.code = ""; }
+                    }
+                }
+            }
+        }
+
+        TabWidget {
+            vertical-stretch: 1;
+
+            Tab {
+                title: "Devices";
+                ListView {
+                    for d in root.devices : Rectangle {
+                        height: 44px;
+                        background: d.connected ? Palette.accent-background.transparentize(0.8) : transparent;
+                        HorizontalLayout {
+                            padding-left: 8px; padding-right: 8px; spacing: 10px;
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                alignment: center;
+                                Text {
+                                    text: d.alias + (d.paired ? "  (paired)" : "") + (d.trusted ? "  (trusted)" : "");
+                                    font-weight: d.connected ? 700 : 400;
+                                    overflow: elide;
+                                }
+                                Info { text: d.address + (d.icon != "" ? "  ·  " + d.icon : ""); }
+                            }
+                            Info { text: d.battery != "" ? "battery " + d.battery + "%" : ""; width: 90px; }
+                            Info { text: d.rssi != "" ? d.rssi + " dBm" : ""; width: 70px; }
+                            if !d.paired : Button { text: "Pair"; width: 90px; clicked => { root.pair(d.address); } }
+                            if d.paired && !d.connected : Button { text: "Connect"; width: 90px; clicked => { root.connect_device(d.address); } }
+                            if d.connected : Button { text: "Disconnect"; width: 90px; clicked => { root.disconnect_device(d.address); } }
+                            Button {
+                                text: d.trusted ? "Untrust" : "Trust";
+                                width: 80px;
+                                enabled: d.paired;
+                                clicked => { root.trust(d.address, !d.trusted); }
+                            }
+                            Button {
+                                text: root.confirm_forget == d.address ? "Sure?" : "Forget";
+                                width: 70px;
+                                enabled: d.paired;
+                                clicked => {
+                                    if (root.confirm_forget == d.address) {
+                                        root.confirm_forget = "";
+                                        root.forget(d.address);
+                                    } else {
+                                        root.confirm_forget = d.address;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Tab {
+                title: "Events";
+                VerticalLayout {
+                    spacing: 6px;
+                    HorizontalLayout {
+                        alignment: start;
+                        Button { text: "Clear"; clicked => { root.clear_events(); } }
+                    }
+                    ListView {
+                        for line in root.events : Text {
+                            text: line;
+                            font-family: "monospace";
+                            font-size: 12px;
+                            height: 18px;
+                            overflow: elide;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

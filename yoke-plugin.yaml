@@ -1,0 +1,9 @@
+plugin: 1
+id: com.yoke.bluetooth
+language: rust
+program: bluetooth
+manifest: plugin/com.yoke.bluetooth.yaml
+build:
+  in: plugin/
+  run: cargo build --release --target "$YOKE_RUST_TARGET" && cp "target/$YOKE_RUST_TARGET/release/bluetooth" "$YOKE_OUT/bluetooth"
+architectures: [x86_64, aarch64]

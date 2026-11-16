@@ -1,0 +1,82 @@
+manifest: 1
+id: com.yoke.bluetooth
+protocol: 1
+streams:
+  - id: bluetooth.status
+  - id: bluetooth.devices
+    tolerates_loss: true
+  - id: bluetooth.scan
+    tolerates_loss: true
+commands:
+  - id: bluetooth.power
+  - id: bluetooth.pair
+  - id: bluetooth.connect
+  - id: bluetooth.disconnect
+  - id: bluetooth.trust
+  - id: bluetooth.forget
+  - id: bluetooth.pairing.answer
+queries:
+  - id: bluetooth.status
+  - id: bluetooth.adapters
+  - id: bluetooth.devices
+occurrences:
+  - id: bluetooth.device.connected
+  - id: bluetooth.device.disconnected
+  - id: bluetooth.pairing.request
+  - id: bluetooth.pairing.display
+  - id: bluetooth.job.finished
+capabilities:
+  - name: query.bluetooth.status.answer
+    governs:
+      query: bluetooth.status
+  - name: query.bluetooth.adapters.answer
+    governs:
+      query: bluetooth.adapters
+  - name: query.bluetooth.devices.answer
+    governs:
+      query: bluetooth.devices
+  - name: command.bluetooth.power.accept
+    governs:
+      command: bluetooth.power
+  - name: command.bluetooth.pair.accept
+    governs:
+      command: bluetooth.pair
+  - name: command.bluetooth.connect.accept
+    governs:
+      command: bluetooth.connect
+  - name: command.bluetooth.disconnect.accept
+    governs:
+      command: bluetooth.disconnect
+  - name: command.bluetooth.trust.accept
+    governs:
+      command: bluetooth.trust
+  - name: command.bluetooth.forget.accept
+    governs:
+      command: bluetooth.forget
+  - name: command.bluetooth.pairing.answer.accept
+    governs:
+      command: bluetooth.pairing.answer
+  - name: stream.bluetooth.status.publish
+    governs:
+      stream: bluetooth.status
+  - name: stream.bluetooth.devices.publish
+    governs:
+      stream: bluetooth.devices
+  - name: stream.bluetooth.scan.publish
+    governs:
+      stream: bluetooth.scan
+  - name: event.bluetooth.device.connected.report
+    governs:
+      occurrence: bluetooth.device.connected
+  - name: event.bluetooth.device.disconnected.report
+    governs:
+      occurrence: bluetooth.device.disconnected
+  - name: event.bluetooth.pairing.request.report
+    governs:
+      occurrence: bluetooth.pairing.request
+  - name: event.bluetooth.pairing.display.report
+    governs:
+      occurrence: bluetooth.pairing.display
+  - name: event.bluetooth.job.finished.report
+    governs:
+      occurrence: bluetooth.job.finished

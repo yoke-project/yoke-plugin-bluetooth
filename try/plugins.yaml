@@ -1,0 +1,8 @@
+plugins:
+  - id: com.yoke.bluetooth
+    unit: bluetooth
+    source: ..
+    tag: null
+    arch: x86_64
+    digest: sha256:8a4da2dac26bd1cc249b7372978786e238fdca10a1f742b38d828f1f277cf328
+    taken: 2026-11-16T18:39:04Z

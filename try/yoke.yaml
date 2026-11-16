@@ -1,0 +1,15 @@
+model: 1
+id: com.yoke.bluetooth-try
+version: 0.1.0
+arch: x86_64
+core: ">=0.15.0"
+units:
+  bluetooth:
+    kind: plugin
+    plugin: com.yoke.bluetooth
+    exec: components/plugins/bluetooth
+    digest: sha256:17d36ee991690e227ac52da816ef3d5884cc66836c4466f2e74a7080d7550034
+channels:
+  panel:
+    transport: local
+    clients: single
