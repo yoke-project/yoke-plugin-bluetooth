@@ -19,7 +19,7 @@ use slint::{ComponentHandle, ModelRc, SharedString, VecModel, Weak};
 use tokio::runtime::Handle;
 use tokio::sync::oneshot;
 use tokio::time::{interval, sleep};
-use yoke_proto::interface::v1::subscribed::Carries;
+use yoke_sdk::interface::subscribed::Carries;
 use yoke_sdk::interface::{Attachment, Filter, Options};
 
 use crate::{DeviceRow, MainWindow};
